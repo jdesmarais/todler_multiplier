@@ -17,6 +17,14 @@ KEY_LEVEL = "level"
 DEFAULT_LEVEL = 1
 DEFAULT_SCORE = 0
 
+DEFAULT_MAX_SECOND_MULTIPLIER = 12
+DEFAULT_TOTAL_NB_QUESTIONS = 20
+DEFAULT_CORRECT_ANSWER_SCORE = 10
+DEFAULT_INCORRECT_ANSWER_SCORE = 10
+
+DEFAULT_CURRENT_TABLE_PROBABILITY = 0.7
+
+
 DEFAULT_SAVE_FILEPATH = "save.json"
 DEFAULT_MSG_COLOR = Fore.CYAN
 
@@ -53,14 +61,14 @@ class PlayerData():
 
 
 class GameLoader():
-    def GetDefaultPlayer(self):
+    def __GetDefaultPlayer(self):
         i = 1
         player = f"Player{i}"
         while (player in self.players_data):
             i += 1
         return f"Player{i}"
 
-    def InputPlayer(self):
+    def __InputPlayer(self):
         print_message("Bienvenue dans le jeu des multiplications",
                       DEFAULT_MSG_COLOR)
         print_message("Comment t'appelles-tu ?", DEFAULT_MSG_COLOR)
@@ -69,13 +77,13 @@ class GameLoader():
             self.player = input_player
         print()
 
-    def WelcomePlayer(self, color=DEFAULT_MSG_COLOR):
+    def __WelcomePlayer(self, color=DEFAULT_MSG_COLOR):
         print(f"{color}Bonjour {Fore.YELLOW}{self.player} {color}!{Fore.RESET}")
         print_message("Prêt à jouer avec moi ? C'est parti !\n", color)
 
-    def FillPlayerName(self):
-        self.InputPlayer()
-        self.WelcomePlayer()
+    def __FillPlayerName(self):
+        self.__InputPlayer()
+        self.__WelcomePlayer()
 
     def __init__(self, save_filepath=DEFAULT_SAVE_FILEPATH):
         # load JSON data
@@ -83,7 +91,7 @@ class GameLoader():
         try:
             with open(save_filepath) as json_save_file:
                 try:
-                    json_save_data = json.loads(json_save_file)
+                    json_save_data = json.loads(json_save_file.read())
                 except:
                     print(f"Cannot load save file [{save_filepath}]")
         except:
@@ -95,35 +103,56 @@ class GameLoader():
             self.players_data[player] = PlayerData(player_json_data)
 
         # set default player
-        self.player = self.GetDefaultPlayer()
+        self.player = self.__GetDefaultPlayer()
 
         # fill player name
-        self.FillPlayerName()
+        self.__FillPlayerName()
 
         # load player data
         self.player_data = self.players_data.get(self.player, PlayerData())
 
+    def GetPlayer(self):
+        return self.player
 
-def fill_player_name(color: str):
-    input_str = str(input())
-    msg = "Bonjour "+input_str+" !"
-    print_message(msg, color)
+    def GetScore(self):
+        return self.player_data.score
 
-    print_message("Prêt à jouer avec moi ? C'est parti !", color)
+    def GetLevel(self):
+        return self.player_data.level
 
 
-# class Level:
-#     def __init__(self, multiplier=1, completed=False, score=0):
-#         self.completed = completed
-#         self.multiplier = multiplier
-#         self.score = score
+class Level():
+    def __InitializeMandatoryQuestions(multiplier: int, max_second_multiplier: int):
+        return [f"{multiplier}x{i}" for i in range(2, max(2, max_second_multiplier))]
+
+    def __init__(self,
+                 multiplier=1,
+                 max_second_multiplier=DEFAULT_MAX_SECOND_MULTIPLIER,
+                 total_nb_questions=DEFAULT_TOTAL_NB_QUESTIONS,
+                 correct_answer_score=DEFAULT_CORRECT_ANSWER_SCORE,
+                 incorrect_answer_score=DEFAULT_INCORRECT_ANSWER_SCORE):
+        self.multiplier = multiplier
+
+        self.total_nb_questions = (max_second_multiplier-2+1)*2
+
+        self.completed = False
+        self.correct_answer_score = correct_answer_score
+        self.incorrect_answer_score = incorrect_answer_score
+
+        self.mandatory_questions = self.__InitializeMandatoryQuestions(
+            self.multiplier, self.max_second_multiplier)
 
 
 def main(args):
     try:
-        GameLoader(args.save)
+        game_loader = GameLoader(args.save)
+        player = game_loader.GetPlayer()
+        player_score = game_loader.GetScore()
+        start_level = game_loader.GetLevel()
 
-        # fill_player_name(DEFAULT_MSG_COLOR)
+        print(f"Player       : {player}")
+        print(f"Player score : {player_score}")
+        print(f"Start level  : {start_level}")
 
         # score = load_save_file(player)
 
