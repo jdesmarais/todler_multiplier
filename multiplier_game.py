@@ -31,10 +31,15 @@ DEFAULT_MSG_COLOR = Fore.CYAN
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--verbose", help="debugging messages", action='store_true', default=False)
+
     parser.add_argument(
         "--only_square", help="only ask squares", action='store_true', default=False)
+
+    parser.add_argument(
+        "--max_second_multiplier", help="maximum multiplier", type=int, default=12)
+
+    parser.add_argument(
+        "--verbose", help="debugging messages", action='store_true', default=False)
     parser.add_argument(
         "--save", help="score file", type=str, default=DEFAULT_SAVE_FILEPATH)
     return parser.parse_args()
@@ -122,15 +127,23 @@ class GameLoader():
     def GetLevel(self):
         return self.player_data.level
 
+    def Print(self):
+        print(f"---------------------------------")
+        print(f"Game loader")
+        print(f"---------------------------------")
+        print(f"Player       : {self.GetPlayer()}")
+        print(f"Player score : {self.GetScore()}")
+        print(f"Level        : {self.GetLevel()}")
+        print()
+
 
 class Level():
-    def __InitializeMandatoryQuestions(multiplier: int, max_second_multiplier: int):
-        return [f"{multiplier}x{i}" for i in range(2, max(2, max_second_multiplier))]
+    def __InitializeMandatoryQuestions(self, multiplier: int, max_second_multiplier: int):
+        return [f"{multiplier}x{i}" for i in range(2, max(2, max_second_multiplier+1))]
 
     def __init__(self,
                  multiplier=1,
                  max_second_multiplier=DEFAULT_MAX_SECOND_MULTIPLIER,
-                 total_nb_questions=DEFAULT_TOTAL_NB_QUESTIONS,
                  correct_answer_score=DEFAULT_CORRECT_ANSWER_SCORE,
                  incorrect_answer_score=DEFAULT_INCORRECT_ANSWER_SCORE):
         self.multiplier = multiplier
@@ -142,7 +155,19 @@ class Level():
         self.incorrect_answer_score = incorrect_answer_score
 
         self.mandatory_questions = self.__InitializeMandatoryQuestions(
-            self.multiplier, self.max_second_multiplier)
+            self.multiplier, max_second_multiplier)
+
+    def Print(self):
+        print(f"---------------------------------")
+        print(f"Level")
+        print(f"---------------------------------")
+        print(f"multiplier             : {self.multiplier}")
+        print(f"total nb questions     : {self.total_nb_questions}")
+        print(f"completed              : {self.completed}")
+        print(f"correct_answer_score   : {self.correct_answer_score}")
+        print(f"incorrect_answer_score : {self.incorrect_answer_score}")
+        print(f"mandatory_questions    : {self.mandatory_questions}")
+        print()
 
 
 def main(args):
@@ -153,13 +178,15 @@ def main(args):
         start_level = game_loader.GetLevel()
 
         if args.verbose:
-            print(f"Player       : {player}")
-            print(f"Player score : {player_score}")
-            print(f"Start level  : {start_level}")
+            game_loader.Print()
 
-        # score = load_save_file(player)
+        level = Level(multiplier=start_level,
+                      max_second_multiplier=args.max_second_multiplier,
+                      correct_answer_score=DEFAULT_CORRECT_ANSWER_SCORE,
+                      incorrect_answer_score=DEFAULT_INCORRECT_ANSWER_SCORE)
 
-        # current_score = 360  # 180
+        if args.verbose:
+            level.Print()
 
         # for i in range(1, 10):
 
