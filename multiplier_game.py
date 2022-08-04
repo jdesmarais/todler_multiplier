@@ -32,6 +32,8 @@ DEFAULT_MSG_COLOR = Fore.CYAN
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
+        "--verbose", help="debugging messages", action='store_true', default=False)
+    parser.add_argument(
         "--only_square", help="only ask squares", action='store_true', default=False)
     parser.add_argument(
         "--save", help="score file", type=str, default=DEFAULT_SAVE_FILEPATH)
@@ -150,9 +152,10 @@ def main(args):
         player_score = game_loader.GetScore()
         start_level = game_loader.GetLevel()
 
-        print(f"Player       : {player}")
-        print(f"Player score : {player_score}")
-        print(f"Start level  : {start_level}")
+        if args.verbose:
+            print(f"Player       : {player}")
+            print(f"Player score : {player_score}")
+            print(f"Start level  : {start_level}")
 
         # score = load_save_file(player)
 
