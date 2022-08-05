@@ -31,6 +31,11 @@ DEFAULT_VERBOSE = False
 DEFAULT_SAVE_FILEPATH = "save.json"
 DEFAULT_MSG_COLOR = Fore.CYAN
 
+KEY_VALID = "is_player_answer_valid"
+KEY_PLAYER_ANSWER = "player_answer"
+KEY_N = "n"
+KEY_M = "m"
+
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -180,21 +185,39 @@ class Level():
                  incorrect_answer_score=DEFAULT_INCORRECT_ANSWER_SCORE):
         self.multiplier = multiplier
 
+        self.nb_asked_questions = 0
         self.total_nb_questions = (max_second_multiplier-2+1)*2
 
-        self.complete = False
         self.correct_answer_score = correct_answer_score
         self.incorrect_answer_score = incorrect_answer_score
 
         self.mandatory_questions = self.__InitializeMandatoryQuestions(
             self.multiplier, max_second_multiplier)
 
-        self.answer_log = {}
+        self.answer_log = []
 
         self.current_level_question_threshold = DEFAULT_CURRENT_TABLE_PROBABILITY
 
     def IsComplete(self):
-        return self.complete
+        return self.nb_asked_questions >= self.total_nb_questions
+
+    def __GetLevelScore(self):
+        nb_valid_answer = 0
+
+        for answer_log in self.answer_log:
+            if answer_log[KEY_VALID]:
+                nb_valid_answer += 1
+
+        return float(nb_valid_answer)/float(self.total_nb_questions)
+
+    def IsValidated(self):
+        all_questions_answered = self.IsComplete()
+        all_mandatory_questions_validated = len(self.mandatory_questions) == 0
+        good_overall_score = self.__GetLevelScore() > 0.90
+
+        return (all_questions_answered and
+                all_mandatory_questions_validated and
+                good_overall_score)
 
     def __PrepareMultipliers(self):
         # we ask a question from the mandatory question of this level only if there are some left
@@ -264,12 +287,36 @@ class Level():
 
         print()
 
+        # if this was a mandatory question, it is discarded
+        if correct_answer and n == self.multiplier:
+            if m in self.mandatory_questions:
+                self.mandatory_questions.remove(m)
+
         return correct_answer, score
 
+    def __LogAnswer(self,
+                    is_player_answer_valid: bool,
+                    player_answer: int,
+                    n: int,
+                    m: int):
+        self.answer_log.append(
+            {
+                KEY_VALID: is_player_answer_valid,
+                KEY_PLAYER_ANSWER: player_answer,
+                KEY_N: n,
+                KEY_M: m
+            }
+        )
+
     def AskQuestion(self):
+        self.nb_asked_questions += 1
         n, m = self.__PrintQuestion()
         player_answer, player_penalty = self.__HandleUserInput()
-        return self.__ComputeScore(n, m, player_answer, player_penalty)
+        is_player_answer_valid, incremental_score = self.__ComputeScore(
+            n, m, player_answer, player_penalty)
+        self.__LogAnswer(is_player_answer_valid, player_answer, n, m)
+
+        return is_player_answer_valid, incremental_score
 
     def Print(self):
         print(f"---------------------------------")
@@ -277,7 +324,6 @@ class Level():
         print(f"---------------------------------")
         print(f"multiplier             : {self.multiplier}")
         print(f"total nb questions     : {self.total_nb_questions}")
-        print(f"completed              : {self.complete}")
         print(f"correct_answer_score   : {self.correct_answer_score}")
         print(f"incorrect_answer_score : {self.incorrect_answer_score}")
         print(f"mandatory_questions    : {self.mandatory_questions}")
@@ -302,10 +348,21 @@ def main(args):
         if args.verbose:
             level.Print()
 
+        # consecutive_good_answers = 0
         while not level.IsComplete():
             correct_answer, incremental_score = level.AskQuestion()
-
             player_score += incremental_score
+
+            # if correct_answer:
+            #     consecutive_good_answers += 1
+            # else:
+            #     consecutive_good_answers = 0
+
+        if level.IsValidated:
+            print(
+                f"{DEFAULT_MSG_COLOR}BRAVO ! Le niveau {Fore.YELLOW}{level_id}{Fore.RESET} est validé ! Tu passes au prochain niveau !{Fore.RESET}")
+            level_id += 1
+            print()
 
         game_loader.Save(args.save,
                          player,
