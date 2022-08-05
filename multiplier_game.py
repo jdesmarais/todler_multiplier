@@ -6,10 +6,12 @@ import json
 import argparse
 import sys
 import os
+import shutil
 import re
 
 from colorama import Fore
 import random
+
 
 KEY_SCORE = "score"
 KEY_LEVEL = "level"
@@ -24,6 +26,7 @@ DEFAULT_INCORRECT_ANSWER_SCORE = 10
 
 DEFAULT_CURRENT_TABLE_PROBABILITY = 0.7
 
+DEFAULT_VERBOSE = False
 
 DEFAULT_SAVE_FILEPATH = "save.json"
 DEFAULT_MSG_COLOR = Fore.CYAN
@@ -54,13 +57,18 @@ def print_score(score: int, color=Fore.CYAN):
 
 
 class PlayerData():
-    def __init__(self, level=DEFAULT_LEVEL, score=DEFAULT_SCORE):
-        self.level = level
-        self.score = score
+    def FromDict(self, dict_data: dict):
+        self.level = dict_data.get(KEY_LEVEL, DEFAULT_LEVEL)
+        self.score = dict_data.get(KEY_SCORE, DEFAULT_SCORE)
+
+    def ToDict(self):
+        return {
+            KEY_LEVEL: self.level,
+            KEY_SCORE: self.score
+        }
 
     def __init__(self, json_data={}):
-        self.level = json_data.get(KEY_LEVEL, DEFAULT_LEVEL)
-        self.score = json_data.get(KEY_SCORE, DEFAULT_SCORE)
+        self.FromDict(json_data)
 
     def Print(self):
         print(self.level)
@@ -127,6 +135,30 @@ class GameLoader():
     def GetLevel(self):
         return self.player_data.level
 
+    def __UpdatePlayerData(self, player: str, player_data: PlayerData):
+        self.players_data[player] = player_data
+
+    def __Write(self, save_filepath=DEFAULT_SAVE_FILEPATH, verbose=DEFAULT_VERBOSE):
+        if os.path.exists(save_filepath) & os.path.isfile(save_filepath):
+            shutil.copyfile(save_filepath, f"{save_filepath}~")
+            if verbose:
+                print(
+                    f"Existing save file successfully copied : {save_filepath} -> {save_filepath}~")
+
+        with open(save_filepath, "w") as write_file:
+            json_data = {}
+            for player, player_data in self.players_data.items():
+                json_data[player] = player_data.ToDict()
+
+            json.dump(json_data, write_file, indent=4)
+
+            if verbose:
+                print(f"Player data successfully written to [{save_filepath}]")
+
+    def Save(self, save_filepath, player: str, player_data: PlayerData, verbose=DEFAULT_VERBOSE):
+        self.__UpdatePlayerData(player, player_data)
+        self.__Write(save_filepath, verbose)
+
     def Print(self):
         print(f"---------------------------------")
         print(f"Game loader")
@@ -175,18 +207,27 @@ def main(args):
         game_loader = GameLoader(args.save)
         player = game_loader.GetPlayer()
         player_score = game_loader.GetScore()
-        start_level = game_loader.GetLevel()
+        level_id = game_loader.GetLevel()
 
         if args.verbose:
             game_loader.Print()
 
-        level = Level(multiplier=start_level,
+        level = Level(multiplier=level_id,
                       max_second_multiplier=args.max_second_multiplier,
                       correct_answer_score=DEFAULT_CORRECT_ANSWER_SCORE,
                       incorrect_answer_score=DEFAULT_INCORRECT_ANSWER_SCORE)
 
         if args.verbose:
             level.Print()
+
+        level_id += 1
+
+        game_loader.Save(args.save,
+                         player,
+                         PlayerData({
+                             KEY_LEVEL: level_id,
+                             KEY_SCORE: player_score}),
+                         args.verbose)
 
         # for i in range(1, 10):
 
