@@ -171,7 +171,7 @@ class GameLoader():
 
 class Level():
     def __InitializeMandatoryQuestions(self, multiplier: int, max_second_multiplier: int):
-        return [f"{multiplier}x{i}" for i in range(2, max(2, max_second_multiplier+1))]
+        return [i for i in range(2, max(2, max_second_multiplier+1))]
 
     def __init__(self,
                  multiplier=1,
@@ -182,12 +182,80 @@ class Level():
 
         self.total_nb_questions = (max_second_multiplier-2+1)*2
 
-        self.completed = False
+        self.complete = False
         self.correct_answer_score = correct_answer_score
         self.incorrect_answer_score = incorrect_answer_score
 
         self.mandatory_questions = self.__InitializeMandatoryQuestions(
             self.multiplier, max_second_multiplier)
+
+        self.answer_log = {}
+
+        self.current_level_question_threshold = DEFAULT_CURRENT_TABLE_PROBABILITY
+
+    def IsComplete(self):
+        return self.complete
+
+    def __PrepareMultipliers(self):
+        # we ask a question from the mandatory question of this level only if there are some left
+        current_level_question = random.random(
+        ) < self.current_level_question_threshold if len(self.mandatory_questions) > 0 else False
+
+        n = self.multiplier
+        m = self.multiplier
+
+        if current_level_question:
+            m = self.mandatory_questions[random.randint(
+                0, len(self.mandatory_questions)-1)]
+        else:
+            n = random.randint(2, self.multiplier -
+                               1) if self.multiplier > 2 else 2
+
+            self.current_level_question_threshold += 0.1
+            self.current_level_question_threshold = min(
+                self.current_level_question_threshold, 1.0)
+
+        return n, m
+
+    def __PrintQuestion(self):
+        n, m = self.__PrepareMultipliers()
+        multiplier_str = f"{Fore.YELLOW}{n}x{m}{DEFAULT_MSG_COLOR}"
+        print(f"{DEFAULT_MSG_COLOR}Combien fait {multiplier_str} ?{Fore.RESET}")
+        return n, m
+
+    def __HandleUserInput(self):
+        MAX_WRONG_INPUT = 3
+        SCORE_DECREASE = 5
+
+        answer_int = 0
+        malus = 0
+
+        cannot_parse_input = True
+        cannot_parse_input_i = 0
+
+        while cannot_parse_input:
+            answer = input()
+            try:
+                answer_int = int(answer)
+                cannot_parse_input = False
+            except:
+                cannot_parse_input_i += 1
+                print(
+                    f"Je n'ai pas compris [{answer}], je ne comprends que les chiffres, recommence s'il te plaît")
+
+                if cannot_parse_input_i > MAX_WRONG_INPUT:
+                    malus += SCORE_DECREASE
+                    print(
+                        f"Attention à ta réponse, ce n'est pas un nombre, c'est déjà la {cannot_parse_input_i}ème fois, je t'enlève {SCORE_DECREASE} points")
+
+        return answer_int, malus
+
+    def AskQuestion(self):
+        n, m = self.__PrintQuestion()
+        player_answer, player_malus = self.__HandleUserInput()
+        # __ComputeScore()
+
+        return 1
 
     def Print(self):
         print(f"---------------------------------")
@@ -195,7 +263,7 @@ class Level():
         print(f"---------------------------------")
         print(f"multiplier             : {self.multiplier}")
         print(f"total nb questions     : {self.total_nb_questions}")
-        print(f"completed              : {self.completed}")
+        print(f"completed              : {self.complete}")
         print(f"correct_answer_score   : {self.correct_answer_score}")
         print(f"incorrect_answer_score : {self.incorrect_answer_score}")
         print(f"mandatory_questions    : {self.mandatory_questions}")
@@ -220,7 +288,8 @@ def main(args):
         if args.verbose:
             level.Print()
 
-        level_id += 1
+        while not level.IsComplete():
+            player_score += level.AskQuestion()
 
         game_loader.Save(args.save,
                          player,
