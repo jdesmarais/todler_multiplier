@@ -86,6 +86,7 @@ class GameLoader():
         player = f"Player{i}"
         while (player in self.players_data):
             i += 1
+            player = f"Player{i}"
         return f"Player{i}"
 
     def __InputPlayer(self):
@@ -186,7 +187,9 @@ class Level():
         self.multiplier = multiplier
 
         self.nb_asked_questions = 0
-        self.total_nb_questions = (max_second_multiplier-2+1)*2
+
+        self.total_nb_questions = (
+            max_second_multiplier-2+1)*2 if not multiplier == 1 else max_second_multiplier
 
         self.correct_answer_score = correct_answer_score
         self.incorrect_answer_score = incorrect_answer_score
@@ -196,7 +199,7 @@ class Level():
 
         self.answer_log = []
 
-        self.current_level_question_threshold = DEFAULT_CURRENT_TABLE_PROBABILITY
+        self.current_level_question_threshold = DEFAULT_CURRENT_TABLE_PROBABILITY if not multiplier == 1 else 1.
 
     def IsComplete(self):
         return self.nb_asked_questions >= self.total_nb_questions
@@ -360,7 +363,7 @@ def main(args):
 
         if level.IsValidated:
             print(
-                f"{DEFAULT_MSG_COLOR}BRAVO ! Le niveau {Fore.YELLOW}{level_id}{Fore.RESET} est validé ! Tu passes au prochain niveau !{Fore.RESET}")
+                f"{Fore.LIGHTMAGENTA_EX}BRAVO ! Le niveau {Fore.YELLOW}{level_id}{Fore.LIGHTMAGENTA_EX} est validé ! Tu passes au prochain niveau !{Fore.RESET}")
             level_id += 1
             print()
 
@@ -370,50 +373,6 @@ def main(args):
                              KEY_LEVEL: level_id,
                              KEY_SCORE: player_score}),
                          args.verbose)
-
-        # for i in range(1, 10):
-
-        #     n = random.randint(1, 10)
-        #     m = n if args.only_square else random.randint(1, 3)
-
-        #     print(f"Combien fait {n}x{m} ?")
-        #     no_answer = True
-        #     answer_int = 0
-        #     while (no_answer):
-        #         answer = input()
-        #         try:
-        #             answer_int = int(answer)
-        #             no_answer = False
-        #         except:
-        #             current_score -= 1
-        #             print(
-        #                 f"Je n'ai pas compris [{answer}], je ne comprends que les chiffres, recommence s'il te plaît")
-        #             print_score(current_score)
-        #             print()
-        #             continue
-
-        #     if answer_int == n*m:
-        #         print("BRAVO")
-        #         # print("\U0001F923")
-        #         current_score += 10
-        #         print_score(current_score)
-        #         print()
-        #     else:
-        #         print(f"ce n'était pas la bonne réponse, {n}x{m} = {n*m}")
-        #         current_score -= 10
-        #         print_score(current_score)
-        #         print()
-
-        # while (current_score > 0):
-        #     print("level")
-
-        #     print("ask_question")
-        #     print("get answer")
-        #     print("check if good")
-        #     add_score or decrease score depending on answer
-
-        #     if level.completed then
-        #     print
 
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
