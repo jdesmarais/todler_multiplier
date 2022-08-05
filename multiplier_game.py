@@ -227,8 +227,9 @@ class Level():
         MAX_WRONG_INPUT = 3
         SCORE_DECREASE = 5
 
+        # parse the answer
         answer_int = 0
-        malus = 0
+        penalty = 0
 
         cannot_parse_input = True
         cannot_parse_input_i = 0
@@ -244,18 +245,31 @@ class Level():
                     f"Je n'ai pas compris [{answer}], je ne comprends que les chiffres, recommence s'il te plaît")
 
                 if cannot_parse_input_i > MAX_WRONG_INPUT:
-                    malus += SCORE_DECREASE
+                    penalty += SCORE_DECREASE
                     print(
                         f"Attention à ta réponse, ce n'est pas un nombre, c'est déjà la {cannot_parse_input_i}ème fois, je t'enlève {SCORE_DECREASE} points")
 
-        return answer_int, malus
+        return answer_int, penalty
+
+    def __ComputeScore(self, n: int, m: int, player_answer: int, player_malus: int):
+        score = -player_malus
+
+        # check the answer
+        correct_answer = player_answer == n*m
+        if correct_answer:
+            score += self.correct_answer_score
+            print(f"BRAVO ! Tu gagnes {score} points !")
+        else:
+            print(f"Ce n'était pas la bonne réponse, {n}x{m} = {n*m}")
+
+        print()
+
+        return correct_answer, score
 
     def AskQuestion(self):
         n, m = self.__PrintQuestion()
-        player_answer, player_malus = self.__HandleUserInput()
-        # __ComputeScore()
-
-        return 1
+        player_answer, player_penalty = self.__HandleUserInput()
+        return self.__ComputeScore(n, m, player_answer, player_penalty)
 
     def Print(self):
         print(f"---------------------------------")
@@ -289,7 +303,9 @@ def main(args):
             level.Print()
 
         while not level.IsComplete():
-            player_score += level.AskQuestion()
+            correct_answer, incremental_score = level.AskQuestion()
+
+            player_score += incremental_score
 
         game_loader.Save(args.save,
                          player,
