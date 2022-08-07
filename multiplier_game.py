@@ -211,7 +211,7 @@ class Level():
         self.nb_asked_questions = 0
 
         self.total_nb_questions = (
-            max_second_multiplier-2+1)*2 if not multiplier == 1 else max_second_multiplier
+            max_second_multiplier-2+1)*2 if multiplier > 2 else max_second_multiplier
 
         self.correct_answer_score = correct_answer_score
         self.incorrect_answer_score = incorrect_answer_score
@@ -379,6 +379,9 @@ def main(args):
 
         if args.verbose:
             level.Print()
+
+        print(
+            f"Ton score actuel est de {Fore.LIGHTMAGENTA_EX}{player_score}{Fore.RESET} x {emoji.emojize(DEFAULT_POINT_ICON)}")
 
         print(f"{DEFAULT_LEVEL_COLOR}")
         print(f"{DEFAULT_LEVEL_ICONS[level_id]}"*11)
