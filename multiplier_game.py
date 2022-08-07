@@ -8,6 +8,7 @@ import sys
 import os
 import shutil
 import re
+import emoji
 
 from colorama import Fore
 import random
@@ -18,6 +19,8 @@ KEY_LEVEL = "level"
 
 DEFAULT_LEVEL = 1
 DEFAULT_SCORE = 0
+
+DEFAULT_LEVEL_COLOR = Fore.GREEN
 
 DEFAULT_MAX_SECOND_MULTIPLIER = 12
 DEFAULT_TOTAL_NB_QUESTIONS = 20
@@ -35,6 +38,25 @@ KEY_VALID = "is_player_answer_valid"
 KEY_PLAYER_ANSWER = "player_answer"
 KEY_N = "n"
 KEY_M = "m"
+
+DEFAULT_LEVEL_ICONS = {
+    1: emoji.emojize(":melon:"),
+    2: emoji.emojize(":strawberry:"),
+    3: emoji.emojize(":pineapple:"),
+    4: emoji.emojize(":lemon:"),
+    5: emoji.emojize(":tangerine:"),
+    6: emoji.emojize(":grapes:"),
+    7: emoji.emojize(":red_apple:"),
+    8: emoji.emojize(":cherries:"),
+    9: emoji.emojize(":kiwi_fruit:"),
+    10: emoji.emojize(":watermelon:"),
+    11: emoji.emojize(":coconut:"),
+    12: emoji.emojize(":crown:"),
+}
+
+DEFAULT_WON_LEVEL_ICON = emoji.emojize(":trophy:")
+DEFAULT_EXTRA_QUESTION_PRICE = emoji.emojize(":red_apple:")
+DEFAULT_POINT_ICON = emoji.emojize(":green_apple:")
 
 
 def get_args():
@@ -246,7 +268,7 @@ class Level():
     def __PrintQuestion(self):
         n, m = self.__PrepareMultipliers()
         multiplier_str = f"{Fore.YELLOW}{n}x{m}{DEFAULT_MSG_COLOR}"
-        print(f"{DEFAULT_MSG_COLOR}Combien fait {multiplier_str} ?{Fore.RESET}")
+        print(f"{DEFAULT_MSG_COLOR}Combien font {multiplier_str} ?{Fore.RESET}")
         return n, m
 
     def __HandleUserInput(self):
@@ -284,11 +306,10 @@ class Level():
         correct_answer = player_answer == n*m
         if correct_answer:
             score += self.correct_answer_score
-            print(f"BRAVO ! Tu gagnes {score} points !")
+            print(f"BRAVO")
         else:
-            print(f"Ce n'était pas la bonne réponse, {n}x{m} = {n*m}")
-
-        print()
+            print(
+                f"Ce n'était pas la bonne réponse, {Fore.YELLOW}{n}x{m} = {n*m}{Fore.RESET}")
 
         # if this was a mandatory question, it is discarded
         if correct_answer and n == self.multiplier:
@@ -334,6 +355,14 @@ class Level():
 
 
 def main(args):
+
+    # for key, value in DEFAULT_LEVEL_ICONS.items():
+    #     print(f"{key} : {value}")
+
+    # print(f"DEFAULT_WON_LEVEL_ICON: {DEFAULT_WON_LEVEL_ICON}")
+    # print(f"DEFAULT_EXTRA_QUESTION_PRICE: {DEFAULT_EXTRA_QUESTION_PRICE}")
+    # print(f"DEFAULT_POINT_ICON: {DEFAULT_POINT_ICON}")
+
     try:
         game_loader = GameLoader(args.save)
         player = game_loader.GetPlayer()
@@ -351,10 +380,21 @@ def main(args):
         if args.verbose:
             level.Print()
 
+        print(f"{DEFAULT_LEVEL_COLOR}")
+        print(f"{DEFAULT_LEVEL_ICONS[level_id]}"*11)
+        print(f"       Niveau {level_id}")
+        print(f"{DEFAULT_LEVEL_ICONS[level_id]}"*11)
+        print(f"{Fore.RESET}")
+
         # consecutive_good_answers = 0
         while not level.IsComplete():
             correct_answer, incremental_score = level.AskQuestion()
             player_score += incremental_score
+            if correct_answer:
+                print(
+                    f"Score : {Fore.LIGHTMAGENTA_EX}{player_score}{Fore.RESET} x {emoji.emojize(DEFAULT_POINT_ICON)}")
+
+            print()
 
             # if correct_answer:
             #     consecutive_good_answers += 1
