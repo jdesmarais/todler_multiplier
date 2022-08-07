@@ -207,6 +207,7 @@ class Level():
                  correct_answer_score=DEFAULT_CORRECT_ANSWER_SCORE,
                  incorrect_answer_score=DEFAULT_INCORRECT_ANSWER_SCORE):
         self.multiplier = multiplier
+        self.max_second_multiplier = max_second_multiplier
 
         self.nb_asked_questions = 0
 
@@ -258,6 +259,8 @@ class Level():
         else:
             n = random.randint(2, self.multiplier -
                                1) if self.multiplier > 2 else 2
+
+            m = random.randint(2, self.max_second_multiplier+1)
 
             self.current_level_question_threshold += 0.1
             self.current_level_question_threshold = min(
@@ -372,50 +375,67 @@ def main(args):
         if args.verbose:
             game_loader.Print()
 
-        level = Level(multiplier=level_id,
-                      max_second_multiplier=args.max_second_multiplier,
-                      correct_answer_score=DEFAULT_CORRECT_ANSWER_SCORE,
-                      incorrect_answer_score=DEFAULT_INCORRECT_ANSWER_SCORE)
-
-        if args.verbose:
-            level.Print()
-
         print(
             f"Ton score actuel est de {Fore.LIGHTMAGENTA_EX}{player_score}{Fore.RESET} x {emoji.emojize(DEFAULT_POINT_ICON)}")
 
-        print(f"{DEFAULT_LEVEL_COLOR}")
-        print(f"{DEFAULT_LEVEL_ICONS[level_id]}"*11)
-        print(f"       Niveau {level_id}")
-        print(f"{DEFAULT_LEVEL_ICONS[level_id]}"*11)
-        print(f"{Fore.RESET}")
+        while level_id <= args.max_second_multiplier:
+            level = Level(multiplier=level_id,
+                          max_second_multiplier=args.max_second_multiplier,
+                          correct_answer_score=DEFAULT_CORRECT_ANSWER_SCORE,
+                          incorrect_answer_score=DEFAULT_INCORRECT_ANSWER_SCORE)
 
-        # consecutive_good_answers = 0
-        while not level.IsComplete():
-            correct_answer, incremental_score = level.AskQuestion()
-            player_score += incremental_score
-            if correct_answer:
+            if args.verbose:
+                level.Print()
+
+            print(f"{DEFAULT_LEVEL_COLOR}")
+            print(f"{DEFAULT_LEVEL_ICONS[level_id]}"*11)
+            print(f"       Niveau {level_id}")
+            print(f"{DEFAULT_LEVEL_ICONS[level_id]}"*11)
+            print(f"{Fore.RESET}")
+
+            # consecutive_good_answers = 0
+            while not level.IsComplete():
+                correct_answer, incremental_score = level.AskQuestion()
+                player_score += incremental_score
+                if correct_answer:
+                    print(
+                        f"Score : {Fore.LIGHTMAGENTA_EX}{player_score}{Fore.RESET} x {emoji.emojize(DEFAULT_POINT_ICON)}")
+
+                print()
+
+                # if correct_answer:
+                #     consecutive_good_answers += 1
+                # else:
+                #     consecutive_good_answers = 0
+
+            if level.IsValidated():
                 print(
-                    f"Score : {Fore.LIGHTMAGENTA_EX}{player_score}{Fore.RESET} x {emoji.emojize(DEFAULT_POINT_ICON)}")
-
+                    f"{Fore.LIGHTMAGENTA_EX}BRAVO ! Le niveau {Fore.YELLOW}{level_id}{Fore.LIGHTMAGENTA_EX} est validé ! Tu passes au prochain niveau !{Fore.RESET}")
+                level_id += 1
+            else:
+                print(
+                    f"{Fore.LIGHTMAGENTA_EX} Le niveau n'est pas validé, est-ce que tu veux essayer à nouveau ?")
             print()
 
-            # if correct_answer:
-            #     consecutive_good_answers += 1
-            # else:
-            #     consecutive_good_answers = 0
+            game_loader.Save(args.save,
+                             player,
+                             PlayerData({
+                                 KEY_LEVEL: level_id,
+                                 KEY_SCORE: player_score}),
+                             args.verbose)
 
-        if level.IsValidated:
             print(
-                f"{Fore.LIGHTMAGENTA_EX}BRAVO ! Le niveau {Fore.YELLOW}{level_id}{Fore.LIGHTMAGENTA_EX} est validé ! Tu passes au prochain niveau !{Fore.RESET}")
-            level_id += 1
-            print()
-
-        game_loader.Save(args.save,
-                         player,
-                         PlayerData({
-                             KEY_LEVEL: level_id,
-                             KEY_SCORE: player_score}),
-                         args.verbose)
+                f"{Fore.LIGHTMAGENTA_EX }Est-ce que tu veux continuer ? (O/N) {Fore.RESET}")
+            should_continue_is_valid = False
+            while not should_continue_is_valid:
+                should_continue = input()
+                if should_continue == "O":
+                    should_continue_is_valid = True
+                elif should_continue == "N":
+                    should_continue_is_valid = True
+                    level_id = args.max_second_multiplier+1
+                else:
+                    print("Je n'ai pas compris, réponds par O (OUI) ou N (NON) stp")
 
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
