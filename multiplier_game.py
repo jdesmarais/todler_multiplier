@@ -335,6 +335,11 @@ class Level():
             }
         )
 
+    # def PrintLog(self):
+    #     for answer_log in self.answer_log:
+    #         msg = f"{"[-]" if answer_log.KEY_VALID else "[X]"}"
+    #         print(f"")
+
     def AskQuestion(self):
         self.nb_asked_questions += 1
         n, m = self.__PrintQuestion()
@@ -413,6 +418,9 @@ def main(args):
                     f"{Fore.LIGHTMAGENTA_EX}BRAVO ! Le niveau {Fore.YELLOW}{level_id}{Fore.LIGHTMAGENTA_EX} est validé ! Tu passes au prochain niveau !{Fore.RESET}")
                 level_id += 1
             else:
+                print(
+                    f"{Fore.LIGHTMAGENTA_EX} Le niveau n'est pas validé, voici tes réponses:")
+                # level.PrintLog()
                 print(
                     f"{Fore.LIGHTMAGENTA_EX} Le niveau n'est pas validé, est-ce que tu veux essayer à nouveau ?")
             print()
